@@ -7,8 +7,6 @@ import (
 	"math/rand"
 	"time"
 
-	"encoding/json"
-
 	"io/ioutil"
 	"net/http"
 
@@ -60,14 +58,13 @@ func main() {
 func serve() {
 	m := mux.NewRouter()
 	http.Handle("/", handlers.CombinedLoggingHandler(os.Stdout, m))
-	// put by id and put all
-	m.HandleFunc("/message", handleRequest).Methods("PUT")
+	m.HandleFunc("/message/{id}", handleRequest).Methods("PUT")
 
 	go func() {
-		log.Infof("listening on %d\n", 8080)
+		log.Infof("Listening on [%d].\n", 8080)
 		err := http.ListenAndServe(fmt.Sprintf(":%d", 8080), nil)
 		if err != nil {
-			log.Printf("web server failed: %v\n", err)
+			log.Printf("Web server failed: [%v].\n", err)
 		}
 	}()
 
@@ -76,7 +73,7 @@ func serve() {
 
 	// wait for ctrl-c
 	<-c
-	println("exiting")
+	println("Exiting.")
 }
 
 func buildHeader(uuid string) map[string]string {
@@ -108,31 +105,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	putMessageOnQueue(payload)
-}
-
-func putMessageOnQueue(payload []byte) {
-	uuid, err := extractUUID(payload)
-	if err != nil {
-		log.Errorf("Error extracting UUID from payload: [%v]", err.Error())
-	}
-	message := producer.Message{Headers: buildHeader(uuid), Body: string(payload)}
-	err = messageProducer.SendMessage(uuid, message)
+	
+	id := mux.Vars(r)["id"]
+	message := producer.Message{Headers: buildHeader(id), Body: string(payload)}
+	err = messageProducer.SendMessage(id, message)
 	if err != nil {
 		log.Errorf("Error sending concept suggestion to queue: [%v]", err.Error())
 	}
-}
-
-func extractUUID(payload []byte) (string, error) {
-	var raw map[string]*json.RawMessage
-	err := json.Unmarshal(payload, &raw)
-	if err != nil {
-		return "", err
-	}
-	var uuid string
-	err = json.Unmarshal(*raw["uuid"], &uuid)
-	if err != nil {
-		return "", err
-	}
-	return uuid, nil
 }
