@@ -50,9 +50,7 @@ Republishing the V1 metadata means taking the V1 metadata stored in the native s
 1. `fleetctl ssh up-queue-sender-v1-metadata@1.service`
 2. `` export SENDER_PORT=`docker ps | grep up-queue-sender | awk '{print $1}' | xargs docker port | cut -d":" -f2` ``
 3. `export MESSAGES_PER_SECOND=20`
-4. ``` docker run coco/up-restutil /up-restutil dump-resources --throttle=$MESSAGES_PER_SECOND http://$HOSTNAME:8080/__nativerw/v1-metadata/ |  \
-       docker run -i coco/up-restutil /up-restutil put-resources uuid http://$HOSTNAME:$SENDER_PORT/message`
-   ```
+4. ` docker run coco/up-restutil /up-restutil dump-resources --throttle=$MESSAGES_PER_SECOND http://$HOSTNAME:8080/__nativerw/v1-metadata/ |  docker run -i coco/up-restutil /up-restutil put-resources uuid http://$HOSTNAME:$SENDER_PORT/message`
 
 ### See 
 
